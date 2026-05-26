@@ -8,7 +8,7 @@ load_dotenv()
 st.title("Nova AI")
 
 with st.sidebar:
-    st.header("App Settings")
+    st.header("Upload options")
     
     # Paste content area
     st.subheader("Paste Content")
