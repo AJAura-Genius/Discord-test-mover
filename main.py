@@ -48,7 +48,7 @@ uploaded_files = st.file_uploader(
 )
 
 # Chat input
-user_query = st.chat_input("Send Nova a message (with or without files)")
+user_query = st.chat_input("Send Nova a message")
 
 # Handle user input with optional files
 if user_query:
