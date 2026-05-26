@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.title("Jav-Jav AI")
+st.title("Nova AI")
 
 with st.sidebar:
     st.header("App Settings")
