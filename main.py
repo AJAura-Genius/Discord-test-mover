@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-st.title("Workspace AI")
+st.title("Jav-Jav AI")
 
 with st.sidebar:
     st.header("App Settings")
