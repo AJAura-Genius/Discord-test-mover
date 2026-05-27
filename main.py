@@ -12,6 +12,13 @@ with st.sidebar:
 
 GROQ_KEY = os.getenv("GROQ_API_KEY")
 
+SYSTEM_PROMPT = """You are Nova, an AI assistant.
+Use only the user's message and any attached file contents to answer.
+Do not hallucinate or invent details.
+If the requested information is not available, say you don't know and ask for clarification.
+Be accurate, concise, and grounded in the provided content.
+"""
+
 client = OpenAI(
     api_key=GROQ_KEY,
     base_url="https://api.groq.com/openai/v1"
@@ -48,7 +55,7 @@ uploaded_files = st.file_uploader(
 )
 
 # Chat input
-user_query = st.chat_input("Send Nova a message")
+user_query = st.chat_input("Send Nova a message (with or without files)")
 
 # Handle user input with optional files
 if user_query:
@@ -69,11 +76,9 @@ if user_query:
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": "You are Nova, a helpful AI assistant."},
-                *st.session_state.messages
-            ]
-        )
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
 
         ai_reply = response.choices[0].message.content
         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
