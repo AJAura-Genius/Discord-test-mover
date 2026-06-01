@@ -54,35 +54,47 @@ uploaded_files = st.file_uploader(
     type=['txt', 'py', 'js', 'json', 'csv', 'md', 'pdf', 'docx']
 )
 
-# Chat input
-user_query = st.chat_input("Send Nova a message (with or without files)")
+# Chat input area that supports copy/paste
+if "user_input" not in st.session_state:
+    st.session_state.user_input = ""
 
-# Handle user input with optional files
-if user_query:
-    message_parts = [user_query]
-    
-    # Add files if any
-    if uploaded_files:
-        message_parts.append("\n**Attached Files:**\n")
-        for file in uploaded_files:
-            file_content = read_file_content(file)
-            message_parts.append(f"\n--- File: {file.name} ---\n{file_content}\n")
-    
-    full_message = "".join(message_parts)
-    
-    st.session_state.messages.append({"role": "user", "content": full_message})
-    st.chat_message("user").write(full_message)
+st.text_area(
+    "Your message to Nova",
+    value=st.session_state.user_input,
+    key="user_input",
+    placeholder="Type or paste text here, then press Send",
+    height=140
+)
 
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+if st.button("Send Nova message"):
+    user_query = st.session_state.user_input.strip()
+    if user_query:
+        message_parts = [user_query]
+
+        if uploaded_files:
+            message_parts.append("\n**Attached Files:**\n")
+            for file in uploaded_files:
+                file_content = read_file_content(file)
+                message_parts.append(f"\n--- File: {file.name} ---\n{file_content}\n")
+
+        full_message = "".join(message_parts)
+        st.session_state.messages.append({"role": "user", "content": full_message})
+        st.chat_message("user").write(full_message)
+        st.session_state.user_input = ""
+
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
                 temperature=0,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
+                    *st.session_state.messages,
+                ],
+            )
 
-        ai_reply = response.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-        st.chat_message("assistant").write(ai_reply)
+            ai_reply = response.choices[0].message.content
+            st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+            st.chat_message("assistant").write(ai_reply)
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+        except Exception as e:
+            st.error(f"Error: {e}")
