@@ -1,3 +1,4 @@
+
 import streamlit as st
 from openai import OpenAI
 import os
@@ -46,27 +47,33 @@ def read_file_content(uploaded_file):
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
-# File uploader in main area
+# Unified chat form: type/paste in the box and drag/drop files into the uploader
 st.markdown("---")
-uploaded_files = st.file_uploader(
-    "Attach files (optional)",
-    accept_multiple_files=True,
-    type=['txt', 'py', 'js', 'json', 'csv', 'md', 'pdf', 'docx']
-)
 
-# Chat input area that supports copy/paste
+# If a previous submit requested clearing the input, clear it before creating the widget
+if st.session_state.get("clear_input"):
+    st.session_state["user_input"] = ""
+    st.session_state.pop("clear_input", None)
+
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
 
-st.text_area(
-    "Your message to Nova",
-    value=st.session_state.user_input,
-    key="user_input",
-    placeholder="Type or paste text here, then press Send",
-    height=140
-)
+with st.form("nova_form"):
+    st.write("Type or paste your message below, then attach files if needed.")
+    user_query = st.text_area(
+        "Your message to Nova",
+        key="user_input",
+        placeholder="Type or paste text here",
+        height=180,
+    )
+    uploaded_files = st.file_uploader(
+        "Attach files (drag and drop supported)",
+        accept_multiple_files=True,
+        type=["txt", "py", "js", "json", "csv", "md", "pdf", "docx"],
+    )
+    send_button = st.form_submit_button("Send Nova message")
 
-if st.button("Send Nova message"):
+if send_button:
     user_query = st.session_state.user_input.strip()
     if user_query:
         message_parts = [user_query]
@@ -80,16 +87,16 @@ if st.button("Send Nova message"):
         full_message = "".join(message_parts)
         st.session_state.messages.append({"role": "user", "content": full_message})
         st.chat_message("user").write(full_message)
-        st.session_state.user_input = ""
+
+        # Request clearing the input on the next run to avoid modifying session_state after widget creation
+        st.session_state["clear_input"] = True
+        st.experimental_rerun()
 
         try:
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 temperature=0,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    *st.session_state.messages,
-                ],
+                messages=[{"role": "system", "content": SYSTEM_PROMPT}, *st.session_state.messages],
             )
 
             ai_reply = response.choices[0].message.content
